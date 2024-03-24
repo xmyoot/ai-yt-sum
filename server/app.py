@@ -1,5 +1,8 @@
+import os
+from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from youtube_transcript_api import YouTubeTranscriptApi
+from supabase import create_client, Client
 # from transformers import T5Tokenizer, T5ForConditionalGeneration
 import spacy
 from summarizer import Summarizer
@@ -10,6 +13,14 @@ from heapq import nlargest
 # Hugging Face() T5, BART, etc.) Gensim, spaCy, OpenAI, BERT
 app = Flask(__name__)
 app.debug = True
+load_dotenv()
+
+# Supabase setup
+url: str = os.environ.get("SUPABASE_URL")
+key: str = os.environ.get("SUPABASE_KEY")
+supabase: Client = create_client(url, key)
+
+data, count = supabase.table('countries').insert({"id": 1, "name": "Denmark"}).execute()
 nlp = spacy.load("en_core_web_sm")
 summarizer = Summarizer(nlp)
 
