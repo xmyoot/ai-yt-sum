@@ -11,13 +11,18 @@ import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
+import AppBar from "@mui/material/AppBar";
+import Toolbar from "@mui/material/Toolbar";
+import IconButton from "@mui/material/IconButton";
+import MenuIcon from "@mui/icons-material/Menu";
+import logo from "./assets/logo.svg";
 
 function Copyright() {
   return (
     <Typography variant="body2" color="text.secondary" align="center">
       {"Copyright © "}
       <Link color="inherit" href="https://mui.com/">
-        Your Website
+        AI Youtube Summarizer, LLC
       </Link>{" "}
       {new Date().getFullYear()}.
     </Typography>
@@ -54,12 +59,44 @@ export default function App() {
       setLoading(false);
     }
   };
+  const handlePrintPDF = () => {
+    const markdown = generateMarkdown(summaries);
+    printPDF(markdown);
+  };
+
+  const generateMarkdown = (summaries: any) => {
+    let markdown = "";
+    if (
+      summaries["Summarized Video:"] &&
+      Array.isArray(summaries["Summarized Video:"])
+    ) {
+      summaries["Summarized Video:"].forEach((summary: any, index: number) => {
+        const title = Object.keys(summary)[0];
+        const content = summary[title].summary;
+        markdown += `## ${title}\n\n${content}\n\n`;
+      });
+    }
+    return markdown;
+  };
+
+  const printPDF = (markdown: string) => {
+    // Use a standard library or external service to print the Markdown document as a PDF
+    // Example: print(markdown);
+  };
   const renderList = (summaries: any) => {
     return (
       <Container maxWidth="lg">
         <Typography variant="h4" component="h2" sx={{ m: 2 }}>
           Video Summary:
         </Typography>
+        <Button
+          variant="contained"
+          color="secondary"
+          sx={{ mb: 3 }}
+          onClick={handlePrintPDF}
+        >
+          Print PDF of Data
+        </Button>
         <List
           sx={{
             bgcolor: "background.paper",
@@ -73,9 +110,9 @@ export default function App() {
               <ListItem key={index}>
                 <ListItemButton>
                   <Typography variant="h6" sx={{ m: 2 }}>
-                    {Object.keys(summary)[0]}:
+                    {Object.keys(summary)}:
                   </Typography>
-                  {summary[Object.keys(summary)[0]]}
+                  {summary[Object.keys(summary)[0]].summary}
                 </ListItemButton>
               </ListItem>
             ))}
@@ -85,6 +122,35 @@ export default function App() {
   };
   return (
     <Container maxWidth="lg">
+      <Box sx={{ flexGrow: 1 }}>
+        <AppBar position="static">
+          <Toolbar>
+            <IconButton
+              size="large"
+              edge="start"
+              color="inherit"
+              aria-label="menu"
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Box
+              height={35}
+              width={35}
+              my={4}
+              display="flex"
+              alignItems="center"
+              sx={{ mr: 2 }}
+            >
+              <img src={logo} alt="Logo" />
+            </Box>
+            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+              AI Youtube Summarizer
+            </Typography>
+            <Button color="inherit">Login</Button>
+          </Toolbar>
+        </AppBar>
+      </Box>
       <Box sx={{ my: 4 }}>
         <Typography variant="h4" component="h1" sx={{ m: 2 }}>
           AI Youtube Summarizer
@@ -103,13 +169,15 @@ export default function App() {
             variant="contained"
             color="primary"
             disabled={loading}
-            sx={{ m: 2 }}
+            sx={{ mt: 4, mb: 3 }}
           >
             {loading ? <CircularProgress size={24} /> : "Summarize Now"}
           </Button>
         </form>
         {loading ? (
-          <CircularProgress size={24} />
+          <Typography variant="h6" sx={{ m: 2 }}>
+            Enter a YouTube URL to summarize the video.
+          </Typography>
         ) : (
           summaries && renderList(summaries)
         )}

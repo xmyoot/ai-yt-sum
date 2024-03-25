@@ -2,8 +2,11 @@ import os
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from flask_cors import cross_origin
+
 from youtube_transcript_api import YouTubeTranscriptApi
 from supabase import create_client, Client
+from textblob import TextBlob
 # from transformers import T5Tokenizer, T5ForConditionalGeneration
 import spacy
 from summarizer import Summarizer
@@ -37,19 +40,36 @@ def process_transcript(transcripts, section_length=300):
             section.append(item['text'])
         else:
             transcript = ' '.join(section)
-            print(f"Transcript: {transcript}")  # Debugging line
+            # print(f"Transcript: {transcript}")  # Debugging line
 
             summary = summarizer.openai_summarize(transcript)
-            print(f"Summary: {summary}")  # Debugging line
+            # print(f"Summary: {summary}")  # Debugging line
 
-            summaries.append({f"{round(section_start/60)}-{round((section_start + section_length)/60)} minutes": summary})
+            # Sentiment analysis
+            blob = TextBlob(summary)
+            sentiment = blob.sentiment.polarity
+
+            summaries.append({f"{round(section_start/60)}-{round((section_start + section_length)/60)} minutes": {
+                "summary": summary,
+                "sentiment": sentiment
+            }})
             section_start = item['start']
             section = [item['text']]
 
     if section:
         transcript = ' '.join(section)
         summary = summarizer.openai_summarize(transcript)
-        summaries.append({f"{round(section_start/60)}-{round((section_start + section_length)/60)} minutes": summary})
+        
+        # Sentiment analysis
+        blob = TextBlob(summary)
+        sentiment = blob.sentiment.polarity
+        
+        summaries.append({
+            f"{round(section_start/60)}-{round((section_start + section_length)/60)} minutes": {
+                "summary": summary,
+                "sentiment": sentiment
+            }
+        })
 
     return { "Summarized Video:": summaries }
 
@@ -59,6 +79,7 @@ def get_data():
     return jsonify(data)
 
 @app.route('/api/transcript', methods=['POST'])
+@cross_origin()
 def get_transcript():
     url = request.json.get('url')
     video_id = url.split('watch?v=')[1]
